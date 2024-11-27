@@ -1,0 +1,7 @@
+# STM32CubeIDE ignore list
+.metadata/
+.settings/
+*.launch
+Debug/
+Release/
+*.elf
