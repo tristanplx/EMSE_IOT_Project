@@ -57,6 +57,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define Alim_temp_Pin GPIO_PIN_7
+#define Alim_temp_GPIO_Port GPIOA
+#define TEMP_Pin GPIO_PIN_0
+#define TEMP_GPIO_Port GPIOB
 #define LED_Pin GPIO_PIN_1
 #define LED_GPIO_Port GPIOB
 #define RST_Pin GPIO_PIN_11
@@ -65,8 +69,10 @@ void Error_Handler(void);
 #define NSS_GPIO_Port GPIOA
 #define DIO0_Pin GPIO_PIN_6
 #define DIO0_GPIO_Port GPIOB
+#define DIO0_EXTI_IRQn EXTI9_5_IRQn
 #define DIO1_Pin GPIO_PIN_7
 #define DIO1_GPIO_Port GPIOB
+#define DIO1_EXTI_IRQn EXTI9_5_IRQn
 
 /* USER CODE BEGIN Private defines */
 
