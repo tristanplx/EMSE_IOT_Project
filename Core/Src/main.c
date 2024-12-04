@@ -51,6 +51,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+u2_t valt;
 // application router ID (LSBF) < ------- IMPORTANT
 static const u1_t APPEUI[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} ;
 // unique device ID (LSBF) < ------- IMPORTANT
@@ -95,21 +96,11 @@ void initfunc (osjob_t* j) {
 	LMIC_startJoining();
 	// init done - onEvent() callback will be invoked...
 }
-static int cnt = 0;
-//static osjob_t hellojob;
+
 static osjob_t initjob;
-static void hellofunc (osjob_t* j) {
-	// say hello
-	debug_str("Hello World!\r\n");
-	// log counter
-	debug_val("cnt = ", cnt);
-	// toggle LED
-	debug_led(++cnt & 1);
-	// reschedule job every second
-	os_setTimedCallback(j, os_getTime()+sec2osticks(1), hellofunc);}
-u2_t readsensor(){
-	u2_t value = 0xDF; /// read from evrything ...make your own sensor
-	return value;
+
+static void readsensor() {
+
 }
 
 static osjob_t reportjob;
@@ -117,6 +108,7 @@ static osjob_t reportjob;
 static void reportfunc (osjob_t* j) {
 	// read sensor
 	u2_t val = readsensor();
+	val = 188686 - 147 * val;
 	debug_val("val = ", val);
 	// prepare and schedule data for transmission
 	LMIC.frame[0] = val << 8;
@@ -239,6 +231,7 @@ int main(void)
   MX_SPI3_Init();
   MX_USART1_UART_Init();
   MX_ADC1_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 	HAL_TIM_Base_Start_IT(&htim7);
 	__HAL_SPI_ENABLE(&hspi3);
