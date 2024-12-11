@@ -51,7 +51,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-u2_t valt;
+u2_t val;
 // application router ID (LSBF) < ------- IMPORTANT
 static const u1_t APPEUI[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} ;
 // unique device ID (LSBF) < ------- IMPORTANT
@@ -98,18 +98,15 @@ void initfunc (osjob_t* j) {
 }
 
 static osjob_t initjob;
-
-static void readsensor() {
-
-}
+volatile uint32_t adcValue = 0;
+volatile float convTemp;
+volatile float voltage;
 
 static osjob_t reportjob;
 // report sensor value every minute
 static void reportfunc (osjob_t* j) {
 	// read sensor
-	u2_t val = readsensor();
-	val = 188686 - 147 * val;
-	debug_val("val = ", val);
+	val = voltage;
 	// prepare and schedule data for transmission
 	LMIC.frame[0] = val << 8;
 	LMIC.frame[1] = val;
@@ -234,6 +231,7 @@ int main(void)
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 	HAL_TIM_Base_Start_IT(&htim7);
+	HAL_TIM_Base_Start_IT(&htim6);
 	__HAL_SPI_ENABLE(&hspi3);
 	// initialize runtime env
 	os_init();
@@ -308,7 +306,15 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+    if (hadc->Instance == ADC1) {
+        adcValue = HAL_ADC_GetValue(hadc);
+        debug_val("ADC Value: ", adcValue);
+        convTemp = ( 1034 - adcValue ) / 5.48;
+        voltage = (adcValue * 3300) / 4095.0f;
+        debug_val("Temp Value: ", voltage);
+    }
+}
 /* USER CODE END 4 */
 
 /**

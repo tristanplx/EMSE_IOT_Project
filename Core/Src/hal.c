@@ -37,8 +37,8 @@
 #include "spi.h"
 #include "adc.h"
 
-#define myTIMER1 htim7
-#define myTIMER2 htim6
+#define myTIMER htim7
+#define myTIMERbis htim6
 #define mySPI hspi3
 
 /*  ************************************** */
@@ -180,13 +180,11 @@ u1_t hal_checkTimer (u4_t time) {
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance == myTIMER1.Instance){
+	if(htim->Instance == myTIMER.Instance){
 		HAL.ticks++;
     }
-	if(htim->Instance == myTIMER2.Instance){
-		HAL_ADC_Start(&hadc1);
-		HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-		valt = HAL_ADC_GetValue(&hadc1);
+	if(htim->Instance == myTIMERbis.Instance) {
+		HAL_ADC_Start_IT(&hadc1);
 	}
 }
 
