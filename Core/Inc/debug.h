@@ -53,6 +53,12 @@ void debug_str (const char* str);
 // write LMiC event name to USART
 void debug_event (int ev);
 
+// convert float 'val' to string 'buf' with 'n' digits
+void debug_float2str (double val, int n);
+
+// write label and 32-bit value as float to USART
+void debug_valfloat (const char* label, double val, int n);
+
 // write label and 32-bit value as hex to USART
 void debug_val (const char* label, u4_t val);
 

@@ -28,9 +28,9 @@
 #include "main.h"
 #include "debug.h"
 #include "lmic.h"
-#include "usart.h"
+#include "usart.h" //  <--------- to add
 
-#define myUART huart1
+#define myUART huart1   //  <--------- change to your setup
 
 /*  ************************************** */
 /*    DO NOT CHANGE BELOW THIS LINE        */
@@ -87,6 +87,21 @@ void debug_str (const char* str) {
     while(*str) {
         debug_char(*str++);
     }
+}
+
+void debug_float2str (double val, int n) {
+	char buf[100], *p = buf;
+	//int n = 7;	// number of digits
+	gcvt(val, n, buf);
+    while(n--)
+        debug_char(*p++);
+}
+
+void debug_valfloat (const char* label, double val, int n) {
+    debug_str(label);
+    debug_float2str(val,n);
+    debug_char('\r');
+    debug_char('\n');
 }
 
 void debug_val (const char* label, u4_t val) {

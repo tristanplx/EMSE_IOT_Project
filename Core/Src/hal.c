@@ -183,9 +183,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if(htim->Instance == myTIMER.Instance){
 		HAL.ticks++;
     }
-	if(htim->Instance == myTIMERbis.Instance) {
-		HAL_ADC_Start_IT(&hadc1);
-	}
 }
 
 // -----------------------------------------------------------------------------

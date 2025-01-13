@@ -30,6 +30,7 @@
 #include "oslmic.h"
 #include "lmic.h"
 #include "lorabase.h"
+#include "cayenne_lpp.h"
 #include "debug.h"
 /* USER CODE END Includes */
 
@@ -40,7 +41,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define ADC_MAX_RESOLUTION 4095 // Résolution maximale de l'ADC (12 bits)
+#define ADC_VREF_MV 3300       // Référence de tension (en mV)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -62,6 +64,9 @@ static const u1_t DEVKEY[16] = {0x79, 0xA9, 0xBA, 0x00, 0x1C, 0xA3, 0x83, 0x85, 
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+uint32_t get_ADC_value(ADC_HandleTypeDef hadc1, uint32_t channel);
+double GET_temperature(uint32_t ADC_value, double VDD);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -97,22 +102,61 @@ void initfunc (osjob_t* j) {
 	// init done - onEvent() callback will be invoked...
 }
 
-static osjob_t initjob;
-volatile uint32_t adcValue = 0;
-volatile float convTemp;
-volatile float voltage;
-
 static osjob_t reportjob;
 // report sensor value every minute
-static void reportfunc (osjob_t* j) {
-	// read sensor
-	val = voltage;
-	// prepare and schedule data for transmission
-	LMIC.frame[0] = val << 8;
-	LMIC.frame[1] = val;
-	LMIC_setTxData2(1, LMIC.frame, 2, 0); // (port 1, 2 bytes, unconfirmed)
-	// reschedule job in 60 seconds
-	os_setTimedCallback(j, os_getTime()+sec2osticks(15), reportfunc);
+static void reportfunc(osjob_t* j) {
+
+    //uint16_t voltage_mv = (uint16_t)(voltage * 1000); // Convert to millivolts
+    //LMIC.frame[0] = (voltage_mv >> 8) & 0xFF;        // Octet supérieur
+    //LMIC.frame[1] = voltage_mv & 0xFF;               // Octet inférieur
+
+    //LMIC_setTxData2(1, LMIC.frame, 2, 0);            // Transmit via LoRa
+    //os_setTimedCallback(j, os_getTime() + sec2osticks(15), reportfunc);
+
+	double temperature_sensor_val = 25.0;
+	cayenne_lpp_t lpp = { 0 };
+
+	HAL_GPIO_WritePin(Alim_temp_GPIO_Port, Alim_temp_Pin, GPIO_PIN_SET);
+	HAL_Delay(100);
+	debug_valfloat("Temperature Sensor value = ", temperature_sensor_val, 6);
+
+	temperature_sensor_val = GET_temperature(get_ADC_value(hadc1, ADC_CHANNEL_15), ADC_VREF_MV);
+
+
+	HAL_GPIO_WritePin(Alim_temp_GPIO_Port, Alim_temp_Pin, GPIO_PIN_RESET);
+	HAL_Delay(100);
+
+	cayenne_lpp_reset(&lpp);
+	cayenne_lpp_add_temperature(&lpp, 0, temperature_sensor_val);
+
+	LMIC_setTxData2(1, &lpp, 4, 0);
+
+	os_setTimedCallback(j, os_getTime()+sec2osticks(10), reportfunc);
+
+}
+
+uint32_t get_ADC_value(ADC_HandleTypeDef hadc1, uint32_t channel){
+
+	uint32_t adc_val = 0;
+
+	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+	HAL_ADC_Start(&hadc1);
+	HAL_ADC_PollForConversion(&hadc1, 100);
+	adc_val = HAL_ADC_GetValue(&hadc1);
+
+	return adc_val;
+
+}
+
+double GET_temperature( uint32_t ADC_value, double VDD) {
+
+	double TEMP_value = 0.0;
+	double voltage = 0.0;
+
+	voltage = (ADC_value*VDD)/ADC_MAX_RESOLUTION;
+	TEMP_value = (1034-voltage)/5.48;
+
+	return TEMP_value;
 }
 
 static osjob_t blinkjob;
@@ -228,11 +272,10 @@ int main(void)
   MX_SPI3_Init();
   MX_USART1_UART_Init();
   MX_ADC1_Init();
-  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 	HAL_TIM_Base_Start_IT(&htim7);
-	HAL_TIM_Base_Start_IT(&htim6);
 	__HAL_SPI_ENABLE(&hspi3);
+	osjob_t initjob;
 	// initialize runtime env
 	os_init();
 	// initialize debug library
@@ -252,7 +295,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	}
+		}
   /* USER CODE END 3 */
 }
 
@@ -306,15 +349,7 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
-    if (hadc->Instance == ADC1) {
-        adcValue = HAL_ADC_GetValue(hadc);
-        debug_val("ADC Value: ", adcValue);
-        convTemp = ( 1034 - adcValue ) / 5.48;
-        voltage = (adcValue * 3300) / 4095.0f;
-        debug_val("Temp Value: ", voltage);
-    }
-}
+
 /* USER CODE END 4 */
 
 /**
@@ -324,11 +359,11 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-	/* User can add his own implementation to report the HAL error return state */
-	__disable_irq();
-	while (1)
-	{
-	}
+		/* User can add his own implementation to report the HAL error return state */
+		__disable_irq();
+		while (1)
+		{
+		}
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -343,7 +378,7 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-	/* User can add his own implementation to report the file name and line number,
+		/* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
