@@ -35,11 +35,12 @@
 #include "main.h"
 #include "tim.h"
 #include "spi.h"
-#include "adc.h"
+#include "lmic.h"
+#include "oslmic.h"
+#include "debug.h"
 
-#define myTIMER htim7
-#define myTIMERbis htim6
-#define mySPI hspi3
+#define myTIMER htim7   //  <--------- change to your setup
+#define mySPI hspi3     //  <--------- change to your setup
 
 /*  ************************************** */
 /*    DO NOT CHANGE BELOW THIS LINE        */

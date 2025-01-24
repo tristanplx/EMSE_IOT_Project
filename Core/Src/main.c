@@ -54,6 +54,7 @@
 
 /* USER CODE BEGIN PV */
 u2_t val;
+uint32_t adc_val = 0;
 // application router ID (LSBF) < ------- IMPORTANT
 static const u1_t APPEUI[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} ;
 // unique device ID (LSBF) < ------- IMPORTANT
@@ -64,11 +65,9 @@ static const u1_t DEVKEY[16] = {0x79, 0xA9, 0xBA, 0x00, 0x1C, 0xA3, 0x83, 0x85, 
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-uint32_t get_ADC_value(ADC_HandleTypeDef hadc1, uint32_t channel);
-double GET_temperature(uint32_t ADC_value, double VDD);
-
 /* USER CODE BEGIN PFP */
-
+uint32_t get_ADC_value(ADC_HandleTypeDef hadc1, uint32_t channel);
+double GET_temperature( uint32_t ADC_value, double VDD);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -118,10 +117,11 @@ static void reportfunc(osjob_t* j) {
 
 	HAL_GPIO_WritePin(Alim_temp_GPIO_Port, Alim_temp_Pin, GPIO_PIN_SET);
 	HAL_Delay(100);
-	debug_valfloat("Temperature Sensor value = ", temperature_sensor_val, 6);
 
 	temperature_sensor_val = GET_temperature(get_ADC_value(hadc1, ADC_CHANNEL_15), ADC_VREF_MV);
 
+
+	debug_valfloat("Temperature Sensor value = ", temperature_sensor_val, 6);
 
 	HAL_GPIO_WritePin(Alim_temp_GPIO_Port, Alim_temp_Pin, GPIO_PIN_RESET);
 	HAL_Delay(100);
@@ -137,7 +137,6 @@ static void reportfunc(osjob_t* j) {
 
 uint32_t get_ADC_value(ADC_HandleTypeDef hadc1, uint32_t channel){
 
-	uint32_t adc_val = 0;
 
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 	HAL_ADC_Start(&hadc1);
@@ -152,7 +151,6 @@ double GET_temperature( uint32_t ADC_value, double VDD) {
 
 	double TEMP_value = 0.0;
 	double voltage = 0.0;
-
 	voltage = (ADC_value*VDD)/ADC_MAX_RESOLUTION;
 	TEMP_value = (1034-voltage)/5.48;
 
